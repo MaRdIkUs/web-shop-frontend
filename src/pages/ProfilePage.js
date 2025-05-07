@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import UserService from '../services/userService';
-import { useAuth } from '../hooks/useAuth';
 
 const ProfilePage = () => {
-  const { user } = useAuth();
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
@@ -19,7 +17,7 @@ const ProfilePage = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Профиль</h1>
-      <p>Имя пользователя: {user?.username}</p>
+      <p>Имя пользователя: {profile?.userName}</p>
       <p>Email: {profile.email}</p>
       {/* Дополнительные поля профиля */}
     </div>

@@ -1,14 +1,22 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import React, { useEffect, useState } from 'react';
 import { useCart } from '../hooks/useCart';
+import UserService from '../services/userService';
+
 
 const Navbar = () => {
-  const { keycloak, user } = useAuth();
   const { cartItems } = useCart();
 
-  const handleLogin = () => keycloak.login();
-  const handleLogout = () => keycloak.logout();
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    UserService.getProfile()
+      .then(response => {
+        setProfile(response.data);
+      })
+      .catch(error => console.error('Ошибка при загрузке профиля', error));
+  }, []);
+
 
   return (
     <nav className="bg-gray-800 p-4 text-white">
@@ -18,14 +26,11 @@ const Navbar = () => {
           <NavLink to="/category/1" className="hover:underline">Категории</NavLink>
         </div>
         <div className="flex space-x-4 items-center">
-          {keycloak.authenticated ? (
             <>
-              <span>Привет, {user?.username}</span>
-              <button onClick={handleLogout}>Выйти</button>
+              <span>Привет, {profile?.username}</span>
+              <button onClick={()=>{UserService.logout()}}>Выйти</button>
             </>
-          ) : (
-            <button onClick={handleLogin}>Войти</button>
-          )}
+            <button onClick={()=>{UserService.login()}}>Войти</button>
           <NavLink to="/cart" className="hover:underline">
             Корзина ({cartItems.length})
           </NavLink>

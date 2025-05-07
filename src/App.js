@@ -2,7 +2,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import PrivateRoute from './components/PrivateRoute';
 
 import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
@@ -21,17 +20,18 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/category/:categoryId" element={<CategoryPage />} />
           <Route path="/product/:productId" element={<ProductPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/cart" element={<CartPage />} />
 
-          {/* Закрытые маршруты (требуется авторизация и роль) */}
-          <Route element={<PrivateRoute roles={['user', 'admin']} />}>
+          {/* <Route element={<PrivateRoute roles={['user', 'admin']} />}>
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/orders" element={<OrdersPage />} />
           </Route>
 
-          {/* Корзина также защищена */}
           <Route element={<PrivateRoute roles={['user', 'admin']} />}>
             <Route path="/cart" element={<CartPage />} />
-          </Route>
+          </Route> */}
         </Routes>
       </div>
     </div>
