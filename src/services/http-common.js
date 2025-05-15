@@ -8,6 +8,9 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.response.use(
   function (response) {
+    if(response.headers.location && response.status === 302){
+      window.location.href = response.headers.location
+    }
     return response;
   },
   function (error) {
@@ -16,12 +19,12 @@ axiosInstance.interceptors.response.use(
       UserService.logout()
       window.location.href = '/login';
     }
-    // if (error.response?.status >= 500) {
-    //   // Редирект на /login
-    //   UserService.logout()
-    //   window.location.href = '/login';
-    // }
-    // return Promise.reject(error);
+    if (error.response?.status >= 302) {
+      // Редирект на /login
+      UserService.logout()
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
   }
 );
 
