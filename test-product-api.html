@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест API продуктов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .products-list {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .product-item {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .product-image {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест API продуктов и загрузки изображений</h1>
+    
+    <div class="container">
+        <div>
+            <h2>Создание продукта</h2>
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="name">Название продукта:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Описание:</label>
+                    <textarea id="description" name="description" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="price">Цена:</label>
+                    <input type="number" id="price" name="price" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="categoryId">Категория ID:</label>
+                    <input type="number" id="categoryId" name="categoryId" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="count">Количество:</label>
+                    <input type="number" id="count" name="count" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="image">Изображение:</label>
+                    <input type="file" id="image" name="image" accept="image/*">
+                </div>
+                
+                <button type="submit">Создать продукт</button>
+                <button type="button" onclick="loadProducts()">Загрузить продукты</button>
+            </form>
+        </div>
+        
+        <div>
+            <h2>Список продуктов</h2>
+            <div id="productsList" class="products-list">
+                <p>Нажмите "Загрузить продукты" для отображения списка</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="log" id="log"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        // Создание продукта
+        document.getElementById('productForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const imageFile = document.getElementById('image').files[0];
+            
+            try {
+                log('Создаем продукт...');
+                
+                // Создаем продукт
+                const productData = {
+                    name: document.getElementById('name').value,
+                    description: document.getElementById('description').value,
+                    price: parseFloat(document.getElementById('price').value),
+                    categoryId: parseInt(document.getElementById('categoryId').value),
+                    count: parseInt(document.getElementById('count').value),
+                    popularity: 0,
+                    tags: [],
+                    specs: []
+                };
+                
+                const productResponse = await fetch(`${API_BASE}/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                if (!productResponse.ok) {
+                    throw new Error(`HTTP error! status: ${productResponse.status}`);
+                }
+                
+                const product = await productResponse.json();
+                log(`Продукт создан с ID: ${product.id}`, 'success');
+                
+                // Загружаем изображение если выбрано
+                if (imageFile) {
+                    log('Загружаем изображение...');
+                    
+                    const imageFormData = new FormData();
+                    imageFormData.append('image', imageFile);
+                    imageFormData.append('categoryId', document.getElementById('categoryId').value);
+                    imageFormData.append('productId', product.id);
+                    
+                    const imageResponse = await fetch(`${API_BASE}/images/upload/category/${document.getElementById('categoryId').value}/product/${product.id}`, {
+                        method: 'POST',
+                        body: imageFormData
+                    });
+                    
+                    if (!imageResponse.ok) {
+                        throw new Error(`Ошибка загрузки изображения! status: ${imageResponse.status}`);
+                    }
+                    
+                    const imageData = await imageResponse.json();
+                    log('Изображение успешно загружено!', 'success');
+                    
+                    // Обновляем продукт с путем к изображению
+                    const updateData = {
+                        ...productData,
+                        image: imageData.filePath
+                    };
+                    
+                    const updateResponse = await fetch(`${API_BASE}/products/${product.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+                    
+                    if (updateResponse.ok) {
+                        log('Продукт обновлен с путем к изображению', 'success');
+                    }
+                }
+                
+                log('Операция завершена успешно!', 'success');
+                
+                // Очищаем форму
+                document.getElementById('productForm').reset();
+                
+                // Обновляем список продуктов
+                await loadProducts();
+                
+            } catch (error) {
+                log(`Ошибка: ${error.message}`, 'error');
+                console.error('Полная ошибка:', error);
+            }
+        });
+        
+        // Загрузка списка продуктов
+        async function loadProducts() {
+            try {
+                log('Загружаем список продуктов...');
+                
+                const response = await fetch(`${API_BASE}/products`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const products = await response.json();
+                log(`Загружено ${products.length} продуктов`, 'success');
+                
+                const productsList = document.getElementById('productsList');
+                
+                if (products.length === 0) {
+                    productsList.innerHTML = '<p>Продукты не найдены</p>';
+                    return;
+                }
+                
+                productsList.innerHTML = products.map(product => `
+                    <div class="product-item">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            ${product.image ? 
+                                `<img src="${API_BASE}${product.image}" alt="${product.name}" class="product-image">` : 
+                                '<div style="width: 100px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 4px;">Нет фото</div>'
+                            }
+                            <div>
+                                <h4>${product.name}</h4>
+                                <p><strong>Цена:</strong> ${product.price} ₽</p>
+                                <p><strong>Остаток:</strong> ${product.count}</p>
+                                <p><strong>Популярность:</strong> ${product.popularity}</p>
+                                <p><strong>Категория ID:</strong> ${product.categoryId}</p>
+                                ${product.image ? `<p><strong>Изображение:</strong> ${product.image}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                log(`Ошибка загрузки продуктов: ${error.message}`, 'error');
+                console.error('Полная ошибка:', error);
+            }
+        }
+        
+        log('Тест API продуктов готов к использованию');
+        log('Убедитесь, что ваш бэкенд сервер запущен на http://localhost:5000');
+    </script>
+</body>
+</html> 

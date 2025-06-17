@@ -1,8 +1,15 @@
 import http from './http-common';
 
 class ProductService {
-  getProducts() { return http.get('/products'); }
-  getProduct(id) { return http.get(`/products/${id}`); }
+  // Получить все товары с фильтрацией
+  getAllProducts(params = {}) {
+    return http.get('/products', { params });
+  }
+
+  // Получить товар по id
+  getProduct(id) { 
+    return http.get(`/products/${id}`); 
+  }
 }
 
 const productService = new ProductService();

@@ -1,10 +1,20 @@
 import http from './http-common';
 
 class UserService {
-    getProfile() { return http.get('/user/profile'); }
-    getOrders(id) { return http.get(`/user/orders`); }
-    login(id) { return http.get(`/user/login`); }
-    logout(id) { return http.get(`/user/logout`) }
+    // Получить профиль пользователя
+    getProfile() { 
+        return http.get('/profile'); 
+    }
+    
+    // Получить заказы пользователя
+    getOrders() { 
+        return http.get('/user/orders'); 
+    }
+    
+    // Выйти из системы
+    logout() { 
+        return http.get('/user/logout'); 
+    }
 }
 
 const userService = new UserService();

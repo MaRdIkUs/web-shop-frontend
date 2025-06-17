@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест API фильтров</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .test-panel {
+            width: 400px;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .results {
+            flex: 1;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .filter-item {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .filter-type {
+            font-weight: bold;
+            color: #1976d2;
+        }
+        .filter-value {
+            color: #666;
+            font-size: 12px;
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест API фильтров</h1>
+    
+    <div class="container">
+        <div class="test-panel">
+            <h3>Тестирование API</h3>
+            
+            <div>
+                <label for="apiUrl">API URL:</label>
+                <input type="text" id="apiUrl" value="http://localhost:5000/api" placeholder="http://localhost:5000/api">
+            </div>
+            
+            <div>
+                <label for="categoryId">ID категории:</label>
+                <input type="number" id="categoryId" value="2" placeholder="2">
+            </div>
+            
+            <button onclick="testGetFilters()">Получить фильтры</button>
+            <button onclick="testCreateFilter()">Создать тестовый фильтр</button>
+            <button onclick="clearResults()">Очистить результаты</button>
+            
+            <div>
+                <h4>Создать фильтр:</h4>
+                <input type="text" id="filterName" placeholder="Название фильтра" value="Бренд">
+                <select id="filterType">
+                    <option value="0">Checkbox (0)</option>
+                    <option value="1" selected>Options (1)</option>
+                    <option value="2">Range (2)</option>
+                    <option value="3">Text (3)</option>
+                </select>
+                <input type="text" id="filterValue" placeholder="Значения (через запятую)" value="Apple,Samsung,Xiaomi">
+                <input type="text" id="filterDefault" placeholder="Значение по умолчанию">
+                <button onclick="createCustomFilter()">Создать</button>
+            </div>
+        </div>
+        
+        <div class="results">
+            <h3>Результаты</h3>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testGetFilters() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const categoryId = document.getElementById('categoryId').value;
+            
+            if (!apiUrl || !categoryId) {
+                log('Пожалуйста, заполните API URL и ID категории', 'error');
+                return;
+            }
+            
+            try {
+                log(`Запрос фильтров для категории ${categoryId}...`, 'info');
+                
+                const response = await fetch(`${apiUrl}/categories/${categoryId}/filters`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                log(`Получено ${data.length} фильтров:`, 'success');
+                
+                data.forEach(filter => {
+                    const filterDiv = document.createElement('div');
+                    filterDiv.className = 'filter-item';
+                    
+                    const typeNames = {
+                        0: 'Checkbox',
+                        1: 'Options', 
+                        2: 'Range',
+                        3: 'Text'
+                    };
+                    
+                    filterDiv.innerHTML = `
+                        <div class="filter-type">ID: ${filter.id} - ${filter.name} (${typeNames[filter.type] || 'Неизвестно'})</div>
+                        <div class="filter-value">Тип: ${filter.type}</div>
+                        <div class="filter-value">Значение: ${filter.value || 'null'}</div>
+                        <div class="filter-value">По умолчанию: ${filter.defaultValue || 'null'}</div>
+                        <div class="filter-value">JSON: ${JSON.stringify(filter)}</div>
+                    `;
+                    
+                    resultsDiv.appendChild(filterDiv);
+                });
+                
+            } catch (error) {
+                log(`Ошибка: ${error.message}`, 'error');
+                console.error('Ошибка запроса:', error);
+            }
+        }
+        
+        async function testCreateFilter() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const categoryId = document.getElementById('categoryId').value;
+            
+            if (!apiUrl || !categoryId) {
+                log('Пожалуйста, заполните API URL и ID категории', 'error');
+                return;
+            }
+            
+            const testFilters = [
+                {
+                    type: 0,
+                    name: "В наличии",
+                    value: null,
+                    defaultValue: null
+                },
+                {
+                    type: 1,
+                    name: "Бренд",
+                    value: "Apple,Samsung,Xiaomi",
+                    defaultValue: null
+                },
+                {
+                    type: 2,
+                    name: "Цена",
+                    value: "1000-50000",
+                    defaultValue: null
+                },
+                {
+                    type: 3,
+                    name: "Поиск",
+                    value: null,
+                    defaultValue: "Введите название..."
+                }
+            ];
+            
+            try {
+                log('Создание тестовых фильтров...', 'info');
+                
+                for (const filter of testFilters) {
+                    const response = await fetch(`${apiUrl}/admin/filters`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            ...filter,
+                            categoryId: parseInt(categoryId)
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    log(`Создан фильтр: ${filter.name} (ID: ${result.id})`, 'success');
+                }
+                
+            } catch (error) {
+                log(`Ошибка создания фильтров: ${error.message}`, 'error');
+                console.error('Ошибка запроса:', error);
+            }
+        }
+        
+        async function createCustomFilter() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const categoryId = document.getElementById('categoryId').value;
+            const name = document.getElementById('filterName').value;
+            const type = parseInt(document.getElementById('filterType').value);
+            const value = document.getElementById('filterValue').value;
+            const defaultValue = document.getElementById('filterDefault').value;
+            
+            if (!apiUrl || !categoryId || !name) {
+                log('Пожалуйста, заполните все обязательные поля', 'error');
+                return;
+            }
+            
+            try {
+                log(`Создание фильтра: ${name}...`, 'info');
+                
+                const filterData = {
+                    type: type,
+                    name: name,
+                    value: value || null,
+                    defaultValue: defaultValue || null,
+                    categoryId: parseInt(categoryId)
+                };
+                
+                const response = await fetch(`${apiUrl}/admin/filters`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(filterData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                log(`Создан фильтр: ${name} (ID: ${result.id})`, 'success');
+                
+            } catch (error) {
+                log(`Ошибка создания фильтра: ${error.message}`, 'error');
+                console.error('Ошибка запроса:', error);
+            }
+        }
+        
+        // Автоматический тест при загрузке
+        window.onload = function() {
+            log('Тест API фильтров готов к использованию', 'success');
+            log('1. Введите API URL и ID категории', 'info');
+            log('2. Нажмите "Получить фильтры" для проверки существующих фильтров', 'info');
+            log('3. Используйте "Создать тестовый фильтр" для добавления примеров', 'info');
+        };
+    </script>
+</body>
+</html> 

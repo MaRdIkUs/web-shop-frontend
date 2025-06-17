@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест фильтров</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .filters {
+            width: 300px;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .products {
+            flex: 1;
+        }
+        .product {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .range-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        .range-inputs input {
+            flex: 1;
+        }
+        .active-filters {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
+        }
+        .filter-tag {
+            display: inline-block;
+            background: #2196f3;
+            color: white;
+            padding: 2px 8px;
+            margin: 2px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест системы фильтров</h1>
+    
+    <div class="container">
+        <div class="filters">
+            <h3>Фильтры</h3>
+            
+            <!-- Чекбокс фильтр -->
+            <div class="filter-group">
+                <label>
+                    <input type="checkbox" id="inStock" onchange="applyFilters()">
+                    В наличии
+                </label>
+            </div>
+            
+            <!-- Выпадающий список -->
+            <div class="filter-group">
+                <label for="brand">Бренд:</label>
+                <select id="brand" onchange="applyFilters()">
+                    <option value="">Все бренды</option>
+                    <option value="Apple">Apple</option>
+                    <option value="Samsung">Samsung</option>
+                    <option value="Xiaomi">Xiaomi</option>
+                </select>
+            </div>
+            
+            <!-- Диапазон цен -->
+            <div class="filter-group">
+                <label>Цена:</label>
+                <div class="range-inputs">
+                    <input type="number" id="priceMin" placeholder="От" onchange="applyFilters()">
+                    <input type="number" id="priceMax" placeholder="До" onchange="applyFilters()">
+                </div>
+            </div>
+            
+            <!-- Текстовый поиск -->
+            <div class="filter-group">
+                <label for="search">Поиск:</label>
+                <input type="text" id="search" placeholder="Введите название..." onchange="applyFilters()">
+            </div>
+            
+            <button onclick="clearFilters()" style="width: 100%; padding: 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Очистить фильтры
+            </button>
+            
+            <div class="active-filters" id="activeFilters" style="display: none;">
+                <strong>Активные фильтры:</strong>
+                <div id="filterTags"></div>
+            </div>
+        </div>
+        
+        <div class="products">
+            <h3>Товары (<span id="productCount">0</span>)</h3>
+            <div id="productList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Тестовые данные
+        const products = [
+            {
+                id: 1,
+                name: "iPhone 13",
+                price: 80000,
+                count: 5,
+                brand: "Apple",
+                tags: [{ name: "Бренд", value: "Apple" }],
+                specs: [{ name: "Цвет", value: "Черный" }]
+            },
+            {
+                id: 2,
+                name: "Samsung Galaxy S21",
+                price: 60000,
+                count: 0,
+                brand: "Samsung",
+                tags: [{ name: "Бренд", value: "Samsung" }],
+                specs: [{ name: "Цвет", value: "Синий" }]
+            },
+            {
+                id: 3,
+                name: "Xiaomi Mi 11",
+                price: 45000,
+                count: 3,
+                brand: "Xiaomi",
+                tags: [{ name: "Бренд", value: "Xiaomi" }],
+                specs: [{ name: "Цвет", value: "Белый" }]
+            },
+            {
+                id: 4,
+                name: "iPhone 12",
+                price: 65000,
+                count: 2,
+                brand: "Apple",
+                tags: [{ name: "Бренд", value: "Apple" }],
+                specs: [{ name: "Цвет", value: "Красный" }]
+            }
+        ];
+
+        let filteredProducts = [...products];
+
+        function applyFilters() {
+            const inStock = document.getElementById('inStock').checked;
+            const brand = document.getElementById('brand').value;
+            const priceMin = document.getElementById('priceMin').value;
+            const priceMax = document.getElementById('priceMax').value;
+            const search = document.getElementById('search').value.toLowerCase();
+
+            filteredProducts = products.filter(product => {
+                // Фильтр по наличию
+                if (inStock && product.count === 0) {
+                    return false;
+                }
+
+                // Фильтр по бренду
+                if (brand && product.brand !== brand) {
+                    return false;
+                }
+
+                // Фильтр по цене
+                if (priceMin && product.price < parseFloat(priceMin)) {
+                    return false;
+                }
+                if (priceMax && product.price > parseFloat(priceMax)) {
+                    return false;
+                }
+
+                // Текстовый поиск
+                if (search) {
+                    const matches = product.name.toLowerCase().includes(search) ||
+                                   product.brand.toLowerCase().includes(search);
+                    if (!matches) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            displayProducts();
+            displayActiveFilters();
+        }
+
+        function displayProducts() {
+            const productList = document.getElementById('productList');
+            const productCount = document.getElementById('productCount');
+            
+            productCount.textContent = filteredProducts.length;
+            
+            if (filteredProducts.length === 0) {
+                productList.innerHTML = '<p>Товары не найдены</p>';
+                return;
+            }
+
+            productList.innerHTML = filteredProducts.map(product => `
+                <div class="product">
+                    <h4>${product.name}</h4>
+                    <p><strong>Бренд:</strong> ${product.brand}</p>
+                    <p><strong>Цена:</strong> ${product.price} ₽</p>
+                    <p><strong>В наличии:</strong> ${product.count} шт.</p>
+                </div>
+            `).join('');
+        }
+
+        function displayActiveFilters() {
+            const activeFilters = document.getElementById('activeFilters');
+            const filterTags = document.getElementById('filterTags');
+            const tags = [];
+
+            if (document.getElementById('inStock').checked) {
+                tags.push('<span class="filter-tag">В наличии</span>');
+            }
+
+            const brand = document.getElementById('brand').value;
+            if (brand) {
+                tags.push(`<span class="filter-tag">Бренд: ${brand}</span>`);
+            }
+
+            const priceMin = document.getElementById('priceMin').value;
+            const priceMax = document.getElementById('priceMax').value;
+            if (priceMin || priceMax) {
+                let priceText = 'Цена: ';
+                if (priceMin && priceMax) {
+                    priceText += `${priceMin} - ${priceMax}`;
+                } else if (priceMin) {
+                    priceText += `от ${priceMin}`;
+                } else if (priceMax) {
+                    priceText += `до ${priceMax}`;
+                }
+                tags.push(`<span class="filter-tag">${priceText}</span>`);
+            }
+
+            const search = document.getElementById('search').value;
+            if (search) {
+                tags.push(`<span class="filter-tag">Поиск: ${search}</span>`);
+            }
+
+            if (tags.length > 0) {
+                filterTags.innerHTML = tags.join('');
+                activeFilters.style.display = 'block';
+            } else {
+                activeFilters.style.display = 'none';
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('inStock').checked = false;
+            document.getElementById('brand').value = '';
+            document.getElementById('priceMin').value = '';
+            document.getElementById('priceMax').value = '';
+            document.getElementById('search').value = '';
+            applyFilters();
+        }
+
+        // Инициализация
+        displayProducts();
+    </script>
+</body>
+</html> 
